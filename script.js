@@ -295,25 +295,119 @@
     viewpoint: {
       title: 'Видовая точка',
       duration: '15 минут',
+      routeTime: '15 мин',
       description: 'Короткий подъём к смотровой площадке с панорамой долины. Лучшее время — утро или закат.',
       image: 'assets/guide-viewpoint.jpg',
-      routeSvg: '<path d="M30 90 Q60 70 90 50 Q110 35 130 30" stroke="#c4b08a" stroke-width="2.5" fill="none" stroke-dasharray="6 4" stroke-linecap="round"/>',
+      routePath: 'M 52 124 Q 92 108 128 90 T 208 58 T 262 44',
+      start: { x: 52, y: 124 },
+      end: { x: 262, y: 44 },
+      terrain: [
+        'M 0 48 Q 90 42 180 48 T 320 52',
+        'M 0 92 Q 110 86 210 90 T 320 94',
+        'M 0 136 Q 80 130 200 134 T 320 138',
+      ],
+      paths: [
+        'M 20 110 Q 60 100 100 108',
+        'M 180 70 Q 230 62 280 68',
+      ],
     },
     lake: {
       title: 'Прогулка к озеру',
       duration: '40 минут',
+      routeTime: '40 мин',
       description: 'Тихая лесная тропа ведёт к озеру. Возьмите лёгкую куртку — у воды прохладнее.',
       image: 'assets/guide-lake.jpg',
-      routeSvg: '<path d="M25 85 Q50 60 70 55 T120 25" stroke="#c4b08a" stroke-width="2.5" fill="none" stroke-dasharray="6 4" stroke-linecap="round"/>',
+      routePath: 'M 46 126 C 78 118 108 100 142 84 S 205 54 266 36',
+      start: { x: 46, y: 126 },
+      end: { x: 266, y: 36 },
+      terrain: [
+        'M 0 44 Q 100 38 200 44 T 320 48',
+        'M 0 88 Q 70 82 160 86 T 320 90',
+        'M 0 132 Q 120 126 240 130 T 320 134',
+      ],
+      paths: [
+        'M 30 118 Q 70 112 95 120',
+        'M 150 78 Q 190 72 230 76',
+        'M 210 100 Q 250 94 300 98',
+      ],
     },
     terrace: {
       title: 'Вечерняя терраса',
       duration: 'вечер',
+      routeTime: '5 мин',
       description: 'Закрытая терраса с видом на закат. Коктейли и лёгкие закуски — по привилегии гостя клуба.',
       image: 'assets/guide-terrace.jpg',
-      routeSvg: '<path d="M35 80 L55 65 L75 55 L105 40" stroke="#c4b08a" stroke-width="2.5" fill="none" stroke-dasharray="6 4" stroke-linecap="round"/>',
+      routePath: 'M 56 120 Q 98 106 140 92 T 218 72',
+      start: { x: 56, y: 120 },
+      end: { x: 218, y: 72 },
+      terrain: [
+        'M 0 50 Q 160 46 320 52',
+        'M 0 96 Q 120 90 220 94 T 320 98',
+        'M 0 138 Q 90 132 200 136 T 320 140',
+      ],
+      paths: [
+        'M 100 108 Q 150 100 190 104',
+      ],
     },
   };
+
+  function buildRouteMapSvg(data) {
+    const terrain = (data.terrain || []).map((d) =>
+      `<path d="${d}" fill="none" stroke="rgba(74, 71, 66, 0.13)" stroke-width="1" stroke-linecap="round"/>`
+    ).join('');
+
+    const paths = (data.paths || []).map((d) =>
+      `<path d="${d}" fill="none" stroke="rgba(74, 71, 66, 0.09)" stroke-width="0.9" stroke-dasharray="4 7" stroke-linecap="round"/>`
+    ).join('');
+
+    const endLines = wrapSvgLabel(data.title, 14);
+    const endY = data.end.y - 12;
+    const endTspan = endLines.map((line, i) =>
+      `<tspan x="${data.end.x}" dy="${i === 0 ? 0 : 11}">${line}</tspan>`
+    ).join('');
+
+    return `
+      <svg class="route-schematic" viewBox="0 0 320 160" aria-hidden="true">
+        <defs>
+          <linearGradient id="routeMapGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ece7df"/>
+            <stop offset="50%" stop-color="#e3ddd3"/>
+            <stop offset="100%" stop-color="#d6cfc4"/>
+          </linearGradient>
+        </defs>
+        <rect width="320" height="160" rx="10" fill="url(#routeMapGrad)"/>
+        ${terrain}
+        ${paths}
+        <path class="route-path" d="${data.routePath}"/>
+        <circle class="route-dot route-dot-start" cx="${data.start.x}" cy="${data.start.y}" r="5.5"/>
+        <circle class="route-dot route-dot-end" cx="${data.end.x}" cy="${data.end.y}" r="5.5"/>
+        <text class="route-label route-label-start" x="${data.start.x}" y="${data.start.y + 17}" text-anchor="middle">Отель</text>
+        <text class="route-label route-label-end" x="${data.end.x}" y="${endY}" text-anchor="middle">${endTspan}</text>
+        <g class="route-time-badge">
+          <rect x="126" y="10" width="68" height="22" rx="11"/>
+          <text class="route-time" x="160" y="25" text-anchor="middle">${data.routeTime}</text>
+        </g>
+      </svg>
+    `;
+  }
+
+  function wrapSvgLabel(text, maxLen) {
+    if (text.length <= maxLen) return [text];
+    const words = text.split(' ');
+    const lines = [];
+    let line = '';
+    words.forEach((word) => {
+      const next = line ? `${line} ${word}` : word;
+      if (next.length > maxLen && line) {
+        lines.push(line);
+        line = word;
+      } else {
+        line = next;
+      }
+    });
+    if (line) lines.push(line);
+    return lines.slice(0, 2);
+  }
 
   function openGuideModal(id) {
     const data = guideData[id];
@@ -328,13 +422,7 @@
       <p class="route-info">${data.duration}</p>
       <p class="modal-subtitle">${data.description}</p>
       <div class="route-map">
-        <div class="route-line">
-          <svg viewBox="0 0 150 100" preserveAspectRatio="none">
-            ${data.routeSvg}
-          </svg>
-        </div>
-        <span class="route-point start"></span>
-        <span class="route-point end"></span>
+        ${buildRouteMapSvg(data)}
       </div>
       <button type="button" class="btn btn-gold" data-add-plan data-title="${data.title}" data-duration="${data.duration}">Добавить в план</button>
       <button type="button" class="btn btn-ghost" data-close>Закрыть</button>

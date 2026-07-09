@@ -23,6 +23,8 @@
   --radius: 16px;
   --radius-sm: 10px;
   --nav-height: 72px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --nav-total: calc(var(--nav-height) + var(--safe-bottom));
   --header-height: 52px;
   --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -74,6 +76,7 @@ body {
   flex-direction: column;
   overflow: hidden;
   position: relative;
+  isolation: isolate;
 }
 
 /* Шапка */
@@ -85,6 +88,8 @@ body {
   height: var(--header-height);
   flex-shrink: 0;
   border-bottom: 1px solid var(--gold-border);
+  position: relative;
+  z-index: 10;
 }
 
 .brand {
@@ -108,6 +113,7 @@ body {
 /* Экраны */
 .screens {
   flex: 1;
+  min-height: 0;
   overflow: hidden;
   position: relative;
 }
@@ -115,7 +121,7 @@ body {
 .screen {
   position: absolute;
   inset: 0;
-  padding: 20px 18px calc(var(--nav-height) + 12px);
+  padding: 20px 18px calc(var(--nav-total) + 12px);
   overflow-y: auto;
   opacity: 0;
   visibility: hidden;
@@ -729,13 +735,19 @@ body {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  height: var(--nav-height);
-  padding: 8px 4px calc(8px + env(safe-area-inset-bottom, 0));
+  min-height: var(--nav-height);
+  height: auto;
+  padding: 8px 4px max(8px, var(--safe-bottom));
   background: rgba(45, 43, 39, 0.95);
   border-top: 1px solid var(--gold-border);
   flex-shrink: 0;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
 }
 
 .nav-item {
@@ -789,7 +801,7 @@ body {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  z-index: 100;
+  z-index: 150;
   padding: 0;
   animation: fadeIn 0.25s ease;
 }
@@ -902,37 +914,74 @@ body {
 
 /* Маршрут в гиде */
 .route-map {
-  height: 120px;
-  background: linear-gradient(180deg, #e8e4dc 0%, #d4cfc5 100%);
+  height: 156px;
+  background: linear-gradient(145deg, #ece7df 0%, #e0d9cf 50%, #d4cdc2 100%);
   border-radius: var(--radius-sm);
   margin: 16px 0 20px;
   position: relative;
   overflow: hidden;
-  border: 1px solid var(--gold-border);
+  border: 1px solid rgba(196, 176, 138, 0.35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
-.route-line {
-  position: absolute;
-  inset: 0;
-}
-
-.route-line svg {
+.route-schematic {
+  display: block;
   width: 100%;
   height: 100%;
 }
 
-.route-point {
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  background: var(--gold);
-  border-radius: 50%;
-  border: 2px solid var(--card-bg);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+.route-schematic .route-path {
+  fill: none;
+  stroke: #c4b08a;
+  stroke-width: 2.5;
+  stroke-dasharray: 8 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 1px 2px rgba(45, 43, 39, 0.12));
 }
 
-.route-point.start { bottom: 20%; left: 15%; }
-.route-point.end { top: 25%; right: 20%; }
+.route-schematic .route-dot {
+  stroke: #f7f5f1;
+  stroke-width: 2.5;
+}
+
+.route-schematic .route-dot-start {
+  fill: #b9a480;
+}
+
+.route-schematic .route-dot-end {
+  fill: #d9c9a8;
+}
+
+.route-schematic .route-label {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 9px;
+  letter-spacing: 0.03em;
+}
+
+.route-schematic .route-label-start {
+  fill: #6b6760;
+}
+
+.route-schematic .route-label-end {
+  fill: #4a4742;
+  font-size: 8.5px;
+  font-weight: 600;
+}
+
+.route-schematic .route-time-badge rect {
+  fill: rgba(45, 43, 39, 0.06);
+  stroke: rgba(196, 176, 138, 0.4);
+  stroke-width: 0.8;
+}
+
+.route-schematic .route-time {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  fill: #5a5650;
+  letter-spacing: 0.04em;
+}
 
 .route-info {
   font-size: 0.85rem;
@@ -970,22 +1019,64 @@ body {
   pointer-events: none;
 }
 
-/* Адаптив */
-@media (max-width: 420px) {
+/* Адаптив — мобильные устройства */
+@media (max-width: 600px) {
+  html {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    min-height: 100dvh;
+    min-height: 100svh;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
   .app-shell {
     padding: 0;
+    min-height: 100dvh;
+    min-height: 100svh;
+    height: 100dvh;
+    height: 100svh;
+    align-items: stretch;
+    overflow: hidden;
   }
 
   .phone-frame {
     max-width: 100%;
+    width: 100%;
+    min-height: 100dvh;
+    min-height: 100svh;
     height: 100dvh;
+    height: 100svh;
+    max-height: none;
     border-radius: 0;
     box-shadow: none;
+    overflow: hidden;
+  }
+
+  .screens {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .screen {
+    padding-bottom: calc(var(--nav-total) + 16px);
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  .toast {
+    bottom: calc(var(--nav-total) + 16px);
   }
 
   .modal {
     max-width: 100%;
     border-radius: 20px 20px 0 0;
+    padding-bottom: calc(32px + var(--safe-bottom));
   }
 
   .modal-photo {
@@ -993,7 +1084,7 @@ body {
   }
 }
 
-@media (min-width: 421px) {
+@media (min-width: 601px) {
   .phone-frame::before {
     content: "";
     position: absolute;
